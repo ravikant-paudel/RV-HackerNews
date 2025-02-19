@@ -1,15 +1,1 @@
-.gradle
-/local.properties
-
-# IntelliJ/Android Studio
-.idea/
-*.iml
-misc.xml
-deploymentTargetDropDown.xml
-
-.DS_Store
 /build
-/captures
-.externalNativeBuild
-.cxx
-*.pepk
