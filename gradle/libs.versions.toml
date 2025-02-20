@@ -12,7 +12,7 @@ ktor = "3.0.3"
 lifecycleRuntimeKtx = "2.8.7"
 ktorClientLogging = "3.0.0"
 materialIconsExtended = "1.7.8"
-kamel = "0.8.3"
+kamel = "1.0.3"
 navigationCompose = "2.8.7"
 
 [libraries]
