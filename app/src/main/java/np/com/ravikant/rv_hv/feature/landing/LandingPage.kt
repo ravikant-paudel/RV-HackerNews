@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.ui.theme.RVHVTheme
 import np.com.ravikant.rv_hv.util.DateTimeUtil
@@ -73,7 +75,8 @@ fun LandingPage(navController: NavController) {
                     ) {
                         itemsIndexed(landingState.list) { index, item ->
                             CharacterCard(item, index + 1) {
-                                navController.navigate("details/${item.id}")
+                                val jsonData = Json.encodeToString(item) // Convert object to JSON string
+                                navController.navigate("detail/$jsonData")
                             }
                         }
                     }
