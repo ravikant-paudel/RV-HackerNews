@@ -2,12 +2,12 @@ package np.com.ravikant.rv_hv.feature.landing
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.ui.theme.RVHVTheme
 import np.com.ravikant.rv_hv.util.DateTimeUtil
@@ -43,48 +45,56 @@ import java.net.URL
 
 
 @Composable
-fun LandingPage(modifier: Modifier) {
+fun LandingPage(navController: NavController) {
 
     val landingViewModel: LandingViewModel = viewModel<LandingViewModel>()
     val landingState: LandingState by landingViewModel.landingState.collectAsState()
+    RVHVTheme {
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
 
-    when (landingState.screenState) {
-        ScreenState.LOADING -> {
-            // handle loading animation
-            print("Loading the screen state")
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                CircularProgressIndicator()
-            }
-        }
 
-        ScreenState.SUCCESS -> {
+            when (landingState.screenState) {
+                ScreenState.LOADING -> {
+                    // handle loading animation
+                    print("Loading the screen state")
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-            print("Loading the SUCCESS state")
-            LazyColumn(
-                modifier = modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                itemsIndexed(landingState.list) { index, item ->
-                    CharacterCard(item, index + 1)
+                ScreenState.SUCCESS -> {
+                    print("Loading the SUCCESS state")
+                    LazyColumn(
+                        modifier = Modifier.padding(innerPadding),
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
+                    ) {
+                        itemsIndexed(landingState.list) { index, item ->
+                            CharacterCard(item, index + 1) {
+                                navController.navigate("details/${item.id}")
+                            }
+                        }
+                    }
+                }
+
+                ScreenState.ERROR -> {
+
+                    print("Loading the screen state")
+                    Text("Request failed")
                 }
             }
         }
-
-        ScreenState.ERROR -> {
-
-            print("Loading the screen state")
-            Text("Request failed")
-        }
     }
+
 
 }
 
 @Composable
-fun CharacterCard(item: LandingData, rank: Int) {
+fun CharacterCard(item: LandingData, rank: Int, onClick: () -> Unit) {
     Row(
+        modifier = Modifier.clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Left Rank & Score Section
@@ -230,6 +240,9 @@ private fun CardPreview() {
                         iconUrl = "https://www.tuhs.org/favicon.ico"
                     ),
                     rank = 1,
+                    onClick = {
+
+                    },
                 )
 
             }

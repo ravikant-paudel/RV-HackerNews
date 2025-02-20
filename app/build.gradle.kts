@@ -69,7 +69,8 @@ dependencies {
     implementation(libs.jsoup)
     //Kamel
     implementation(libs.kamel)
-
-
+    //Material Icon
     implementation(libs.androidx.material.icons.extended)
+    //Navigation
+    implementation(libs.androidx.navigation.compose)
 }

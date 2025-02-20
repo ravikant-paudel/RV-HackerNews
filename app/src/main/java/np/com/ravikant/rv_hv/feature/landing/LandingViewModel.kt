@@ -36,7 +36,7 @@ class LandingViewModel : ViewModel() {
 
             if (idList.isNotEmpty()) {
                 val detailList = coroutineScope {
-                    idList.take(20).map { id ->
+                    idList.take(15).map { id ->
                         async(Dispatchers.IO) {
                             try {
                                 _repository.fetchDetailFrmId(id)
