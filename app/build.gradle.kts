@@ -57,16 +57,18 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
     //View-model
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-
     //ktor
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.logging)
+    //JSoup
+    implementation(libs.jsoup)
+    //Kamel
+    implementation(libs.kamel)
 
 
     implementation(libs.androidx.material.icons.extended)

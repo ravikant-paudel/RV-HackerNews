@@ -8,8 +8,9 @@ data class LandingData(
     val descendants: Int = 0,
     val id: Int = 0,
     val score: Int = 0,
-    val time: Int = 0,
+    val time: Long = 0,
     val title: String = "",
     val type: String = "",
-    val url: String = ""
+    val url: String = "",
+    var iconUrl : String =""
 )

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import np.com.ravikant.rv_hv.ScreenState
+import np.com.ravikant.rv_hv.util.DateTimeUtil
 import java.net.URL
 
 
@@ -126,42 +129,69 @@ fun CharacterCard(item: LandingData, rank: Int) {
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
-            Text(
-                text = URL(item.url).host,
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-            Text(
-                text = "${item.time} - ${item.by}",
-                fontSize = 12.sp,
-                color = Color.DarkGray
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Column() {
+                    Row {
+//                        KamelImage(
+//                            modifier = Modifier.height(30.dp),
+//                            resource = asyncPainterResource(data = "https://upload.wikimedia.org/wikipedia/commons/8/88/World_map_blank_without_borders.svg"),
+//                            contentScale = ContentScale.Crop,
+//                            contentDescription = "Favicon for ${item.url}"
+//                        )
+//                        Icon(
+//                            imageVector = Icons.Filled.Whatshot,
+//                            contentDescription = "Comments",
+//                            tint = Color.Red,
+//                            modifier = Modifier.size(8.dp)
+//                        )
+
+                        Text(
+                            text = URL(item.url).host,
+
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+
+                    }
+                    Text(
+                        text = "${DateTimeUtil.getRelativeTime(item.time)} - ${item.by}",
+
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.DarkGray
+                    )
+                }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(end = 16.dp), horizontalArrangement = Arrangement.End
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ChatBubbleOutline,
+                        contentDescription = "Comments",
+                        tint = Color.Red,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = item.descendants.toString(),
+                        fontSize = 12.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More Options",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
         }
 
-        // Right Section (Comments & More Options)
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.ChatBubbleOutline,
-                contentDescription = "Comments",
-                tint = Color.Red,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = item.descendants.toString(),
-                fontSize = 12.sp,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "More Options",
-                tint = Color.Gray,
-                modifier = Modifier.size(20.dp)
-            )
-        }
     }
 }
 
@@ -175,16 +205,16 @@ fun CardTest() {
         verticalArrangement = Arrangement.Center,
     ) {
         CharacterCard(
-
             LandingData(
                 id = 12345,
                 by = "Ravi",
-                time = 43094260,
+                time = 1740001267,
                 type = "story",
                 url = "https://github.com/ValveSoftware/source-sdk-2013/commit/0759e2e8e179d5352d81d0d4aaded72c1704b7a9",
                 title = "Valve releases Team Fortress 2 code",
                 score = 1453,
                 descendants = 222,
+                iconUrl = "https://www.tuhs.org/favicon.ico"
             ),
             rank = 1,
         )
