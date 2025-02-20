@@ -1,5 +1,6 @@
 package np.com.ravikant.rv_hv.feature.landing
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import np.com.ravikant.rv_hv.ScreenState
+import np.com.ravikant.rv_hv.ui.theme.RVHVTheme
 import np.com.ravikant.rv_hv.util.DateTimeUtil
 import java.net.URL
 
@@ -87,7 +91,7 @@ fun CharacterCard(item: LandingData, rank: Int) {
         Column(
             modifier = Modifier
                 .width(60.dp)
-                .background(Color(0xFFFFE0B2))
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -95,7 +99,6 @@ fun CharacterCard(item: LandingData, rank: Int) {
                 text = rank.toString(),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
             )
             Text(
                 text = "${item.score}p",
@@ -121,19 +124,18 @@ fun CharacterCard(item: LandingData, rank: Int) {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 8.dp)
+                .padding(start = 8.dp, end = 8.dp)
         ) {
             Text(
                 text = item.title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+                style = MaterialTheme.typography.titleMedium
             )
+            Spacer(Modifier.height(4.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                Column() {
+                Column {
                     Row {
 //                        KamelImage(
 //                            modifier = Modifier.height(30.dp),
@@ -150,23 +152,22 @@ fun CharacterCard(item: LandingData, rank: Int) {
 
                         Text(
                             text = URL(item.url).host,
-
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
+
+                            )
 
                     }
                     Text(
                         text = "${DateTimeUtil.getRelativeTime(item.time)} - ${item.by}",
-
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.DarkGray
                     )
                 }
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(end = 16.dp), horizontalArrangement = Arrangement.End
+                        .padding(end = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.ChatBubbleOutline,
@@ -174,13 +175,12 @@ fun CharacterCard(item: LandingData, rank: Int) {
                         tint = Color.Red,
                         modifier = Modifier.size(18.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = item.descendants.toString(),
                         fontSize = 12.sp,
-                        color = Color.Black
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More Options",
@@ -196,29 +196,44 @@ fun CharacterCard(item: LandingData, rank: Int) {
 }
 
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(
+    name = "DARK",
+    showBackground = true,
+    showSystemUi = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Preview(
+    name = "LIGHT",
+    showBackground = true,
+    showSystemUi = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
 @Composable
-fun CardTest() {
+private fun CardPreview() {
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        CharacterCard(
-            LandingData(
-                id = 12345,
-                by = "Ravi",
-                time = 1740001267,
-                type = "story",
-                url = "https://github.com/ValveSoftware/source-sdk-2013/commit/0759e2e8e179d5352d81d0d4aaded72c1704b7a9",
-                title = "Valve releases Team Fortress 2 code",
-                score = 1453,
-                descendants = 222,
-                iconUrl = "https://www.tuhs.org/favicon.ico"
-            ),
-            rank = 1,
-        )
+    RVHVTheme {
+        Surface {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                CharacterCard(
+                    LandingData(
+                        id = 12345,
+                        by = "Ravi",
+                        time = 1740001267,
+                        type = "story",
+                        url = "https://github.com/ValveSoftware/source-sdk-2013/commit/0759e2e8e179d5352d81d0d4aaded72c1704b7a9",
+                        title = "Valve releases Team Fortress 2 codesssss which is the best thing",
+                        score = 1453,
+                        descendants = 222,
+                        iconUrl = "https://www.tuhs.org/favicon.ico"
+                    ),
+                    rank = 1,
+                )
 
+            }
+        }
     }
 }
 
