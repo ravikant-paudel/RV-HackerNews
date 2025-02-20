@@ -9,6 +9,8 @@ data class LandingData(
     val id: Int = 0,
     val score: Int = 0,
     val time: Long = 0,
+    val kids: List<Long> = emptyList(),
+    val parent: Long = 0,
     val title: String = "",
     val type: String = "",
     val url: String = "",
