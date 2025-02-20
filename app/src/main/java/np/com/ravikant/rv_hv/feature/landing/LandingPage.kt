@@ -4,43 +4,35 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import np.com.ravikant.rv_hv.ScreenState
+import java.net.URL
 
 
 @Composable
@@ -66,9 +58,10 @@ fun LandingPage(modifier: Modifier) {
             print("Loading the SUCCESS state")
             LazyColumn(
                 modifier = modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(1.dp),
             ) {
                 itemsIndexed(landingState.list) { index, item ->
-                    CharacterCard(item,index + 1)
+                    CharacterCard(item, index + 1)
                 }
             }
         }
@@ -85,18 +78,14 @@ fun LandingPage(modifier: Modifier) {
 @Composable
 fun CharacterCard(item: LandingData, rank: Int) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(if (rank % 2 == 0) Color.White else Color(0xFFF5F5F5)) // Alternating row colors
-            .padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Left Rank & Score Section
         Column(
             modifier = Modifier
-                .width(50.dp)
-                .background(Color(0xFFFFE0B2)) // Orange-ish background
-                .padding(vertical = 6.dp, horizontal = 6.dp),
+                .width(60.dp)
+                .background(Color(0xFFFFE0B2))
+                .padding(vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -118,7 +107,10 @@ fun CharacterCard(item: LandingData, rank: Int) {
                     contentDescription = "Hot",
                     tint = Color(0xFFFFA000),
                     modifier = Modifier.size(16.dp)
+
                 )
+            } else {
+                Spacer(modifier = Modifier.size(16.dp))
             }
         }
 
@@ -135,7 +127,7 @@ fun CharacterCard(item: LandingData, rank: Int) {
                 color = Color.Black
             )
             Text(
-                text = "item.source",
+                text = URL(item.url).host,
                 fontSize = 12.sp,
                 color = Color.Gray
             )
@@ -172,8 +164,6 @@ fun CharacterCard(item: LandingData, rank: Int) {
         }
     }
 }
-
-
 
 
 @Preview(showBackground = true, showSystemUi = true)
