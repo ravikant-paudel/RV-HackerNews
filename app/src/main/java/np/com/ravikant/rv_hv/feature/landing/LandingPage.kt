@@ -1,6 +1,7 @@
 package np.com.ravikant.rv_hv.feature.landing
 
 import android.content.res.Configuration
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -75,8 +76,8 @@ fun LandingPage(navController: NavController) {
                     ) {
                         itemsIndexed(landingState.list) { index, item ->
                             CharacterCard(item, index + 1) {
-                                val jsonData = Json.encodeToString(item) // Convert object to JSON string
-                                navController.navigate("detail/$jsonData")
+                                val jsonData = Uri.encode(Json.encodeToString(item)) // Encode JSON
+                                navController.navigate("detail/$jsonData") // Pass encoded data
                             }
                         }
                     }
