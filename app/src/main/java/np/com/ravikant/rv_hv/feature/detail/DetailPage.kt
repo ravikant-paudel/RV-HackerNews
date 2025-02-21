@@ -2,6 +2,7 @@ package np.com.ravikant.rv_hv.feature.detail
 
 import android.content.res.Configuration
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,7 +72,9 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
             }
 
             ScreenState.SUCCESS -> {
-                print("Loading the SUCCESS state")
+                Log.d(detailState.list.toString(), "List Data")
+                print("Loading the SUCCESS state ${detailState.list}")
+                Text("Request SUCCESS")
             }
 
             ScreenState.ERROR -> {

@@ -5,5 +5,5 @@ import np.com.ravikant.rv_hv.feature.landing.LandingData
 
 data class DetailState(
     val screenState: ScreenState = ScreenState.LOADING,
-    val list: List<LandingData> = emptyList()
+    val list: List<DetailData> = emptyList()
 )
