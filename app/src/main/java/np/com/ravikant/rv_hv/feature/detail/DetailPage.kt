@@ -3,6 +3,7 @@ package np.com.ravikant.rv_hv.feature.detail
 import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,13 +27,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import kotlinx.serialization.json.Json
+import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.feature.landing.LandingData
 import np.com.ravikant.rv_hv.ui.theme.RVHVTheme
 import np.com.ravikant.rv_hv.util.DateTimeUtil
@@ -42,23 +50,65 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
     val jsonData = backStackEntry.arguments?.getString("data") ?: return
     val landingData = Json.decodeFromString<LandingData>(Uri.decode(jsonData))
 
+    val detailViewModel: DetailViewModel = viewModel<DetailViewModel>()
+    val detailState: DetailState by detailViewModel.detailState.collectAsState()
+
+
+    LaunchedEffect(Unit) {
+        detailViewModel.fetchDetailApiCall(landingData.id)
+    }
+
     Scaffold { innerPadding ->
-        DetailChatSection(innerPadding, landingData)
+        DetailSection(innerPadding, landingData)
+        when (detailState.screenState) {
+            ScreenState.LOADING -> {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            ScreenState.SUCCESS -> {
+                print("Loading the SUCCESS state")
+            }
+
+            ScreenState.ERROR -> {
+                print("Loading the screen state")
+                Text("Request failed")
+            }
+
+        }
     }
 }
 
 @Composable
-private fun DetailChatSection(
+fun DetailSection(
+    innerPadding: PaddingValues,
+    landingData: LandingData
+) {
+    Column {
+        DetailHeaderSection(innerPadding, landingData)
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            thickness = 1.dp,
+        )
+
+    }
+}
+
+@Composable
+private fun DetailHeaderSection(
     innerPadding: PaddingValues,
     landingData: LandingData
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .padding(innerPadding)
             .padding(horizontal = 16.dp),
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+//        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = landingData.title,
             style = MaterialTheme.typography.titleLarge,
@@ -130,11 +180,6 @@ private fun DetailChatSection(
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(
-            modifier = Modifier.fillMaxWidth(),
-            thickness = 1.dp,
-        )
-
     }
 }
 
@@ -160,10 +205,10 @@ private fun CardPreview() {
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
             ) {
-                DetailChatSection(
+                DetailSection(
                     landingData = LandingData(
                         id = 12345,
-                        by = "Ravi",
+                        by = "Ravikant Paudel",
                         time = 1740001267,
                         type = "story",
                         url = "https://github.com/ValveSoftware/source-sdk-2013/commit/0759e2e8e179d5352d81d0d4aaded72c1704b7a9",
