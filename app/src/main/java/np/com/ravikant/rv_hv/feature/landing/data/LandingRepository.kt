@@ -1,7 +1,6 @@
 package np.com.ravikant.rv_hv.feature.landing.data
 
 import np.com.ravikant.rv_hv.feature.landing.LandingData
-import org.jsoup.Jsoup
 
 class LandingRepository {
     val service: LandingService = LandingService()
@@ -10,7 +9,7 @@ class LandingRepository {
         return service.listLandingIds()
     }
 
-    suspend fun fetchDetailFrmId(id: Int): LandingData{
+    suspend fun fetchDetailFrmId(id: Int): LandingData {
         return service.fetchDetailFrmId(id)
     }
 }
