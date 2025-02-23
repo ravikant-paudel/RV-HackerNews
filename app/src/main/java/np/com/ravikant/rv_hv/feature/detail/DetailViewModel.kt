@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.feature.detail.data.DetailRepository
 import kotlin.math.min
+
+
 class DetailViewModel : ViewModel() {
 
     private val _detailState = MutableStateFlow(DetailState())
@@ -61,20 +63,32 @@ class DetailViewModel : ViewModel() {
         return repository.fetchDetailFromId(commentId)?.copy(replies = emptyList())
     }
 
-    // Load immediate replies on demand (only one level deep)
     fun loadRepliesForComment(commentId: Int) {
         viewModelScope.launch {
-            val comment = _detailState.value.list.find { it.id == commentId } ?: return@launch
-            val replies = comment.kids?.mapNotNull { kidId ->
-                // Again, only load the immediate reply details
-                fetchComment(kidId)
-            } ?: emptyList()
-
-            // Update the comment within the state
-            val updatedList = _detailState.value.list.map {
-                if (it.id == commentId) it.copy(replies = replies) else it
+            // Recursively search for the comment in all levels of replies
+            fun findComment(comments: List<DetailData>): DetailData? {
+                for (comment in comments) {
+                    if (comment.id == commentId) return comment
+                    val foundInReplies = findComment(comment.replies)
+                    if (foundInReplies != null) return foundInReplies
+                }
+                return null
             }
-            _detailState.value = _detailState.value.copy(list = updatedList)
+
+            val comment = findComment(_detailState.value.list) ?: return@launch
+            val replies = comment.kids?.mapNotNull { kidId -> fetchComment(kidId) } ?: emptyList()
+
+            // Update the comment's replies in the state
+            fun updateList(comments: List<DetailData>): List<DetailData> {
+                return comments.map {
+                    if (it.id == commentId) it.copy(replies = replies)
+                    else it.copy(replies = updateList(it.replies))
+                }
+            }
+
+            _detailState.value = _detailState.value.copy(
+                list = updateList(_detailState.value.list)
+            )
         }
     }
 }

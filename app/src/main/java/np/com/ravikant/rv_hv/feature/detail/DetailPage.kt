@@ -1,7 +1,6 @@
 package np.com.ravikant.rv_hv.feature.detail
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -91,6 +91,7 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                     }
                 }
                 ScreenState.SUCCESS -> {
+                    val expandedComments = remember { mutableStateOf(emptyMap<Int, Boolean>()) }
                     LazyColumn(state = lazyListState) {
                         items(detailState.list) { comment ->
                             CommentItem(
@@ -98,7 +99,8 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                                 onLoadReplies = { commentId ->
                                     // Trigger on-demand loading of immediate replies
                                     detailViewModel.loadRepliesForComment(commentId)
-                                }
+                                },
+                                expandedComments = expandedComments
                             )
                         }
                     }
@@ -111,9 +113,10 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
     }
 }
 
+
 @Composable
-fun CommentItem(comment: DetailData, onLoadReplies: (Int) -> Unit) {
-    var isExpanded by remember { mutableStateOf(false) }
+fun CommentItem(comment: DetailData, expandedComments: MutableState<Map<Int, Boolean>>, onLoadReplies: (Int) -> Unit) {
+    val isExpanded = expandedComments.value[comment.id] ?: false
 
     Card(
         modifier = Modifier
@@ -134,13 +137,15 @@ fun CommentItem(comment: DetailData, onLoadReplies: (Int) -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
             )
 
-            // Load replies when expanded
+            // Show button if there are potential replies (kids exist) or replies are already loaded
             if ((comment.kids?.isNotEmpty() == true) || comment.replies.isNotEmpty()) {
                 Button(
                     onClick = {
-                        isExpanded = !isExpanded
-                        if (isExpanded) {
-                            onLoadReplies(comment.id) // Load replies for this comment
+                        expandedComments.value = expandedComments.value.toMutableMap().apply {
+                            this[comment.id] = !(this[comment.id] ?: false)
+                        }
+                        if (!isExpanded && comment.replies.isEmpty()) {
+                            onLoadReplies(comment.id) // Load replies only when expanding for the first time
                         }
                     },
                     modifier = Modifier.padding(top = 8.dp)
@@ -151,11 +156,22 @@ fun CommentItem(comment: DetailData, onLoadReplies: (Int) -> Unit) {
                 if (isExpanded) {
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         comment.replies.forEach { reply ->
-                            CommentItem(reply, onLoadReplies) // Recursively render replies
+                            CommentItem(reply, expandedComments, onLoadReplies) // Recursively render replies
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun CommentList(comments: List<DetailData>, onLoadReplies: (Int) -> Unit) {
+    val expandedComments = remember { mutableStateOf(mapOf<Int, Boolean>()) }
+
+    LazyColumn {
+        items(comments) { comment ->
+            CommentItem(comment, expandedComments, onLoadReplies)
         }
     }
 }

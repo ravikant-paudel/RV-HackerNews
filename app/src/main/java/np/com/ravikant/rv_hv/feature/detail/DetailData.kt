@@ -8,6 +8,6 @@ data class DetailData(
     val by: String? = null,
     val text: String? = null,
     val time: Long? = null,
-    val kids: List<Int>? = emptyList(),
+    val kids: List<Int>?,
     val replies: List<DetailData> = emptyList()
 )

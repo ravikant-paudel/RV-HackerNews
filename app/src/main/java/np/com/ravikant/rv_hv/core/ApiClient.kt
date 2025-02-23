@@ -39,6 +39,7 @@ class ApiClient {
                 json(
                     Json {
                         ignoreUnknownKeys = true
+                        explicitNulls = false
                     }
                 )
             }
