@@ -1,9 +1,7 @@
 package np.com.ravikant.rv_hv.feature.detail
 
-import android.content.res.Configuration
 import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,26 +13,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -42,7 +49,6 @@ import androidx.navigation.NavController
 import kotlinx.serialization.json.Json
 import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.feature.landing.LandingData
-import np.com.ravikant.rv_hv.ui.theme.RVHVTheme
 import np.com.ravikant.rv_hv.util.DateTimeUtil
 import java.net.URL
 
@@ -51,40 +57,110 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
     val jsonData = backStackEntry.arguments?.getString("data") ?: return
     val landingData = Json.decodeFromString<LandingData>(Uri.decode(jsonData))
 
-    val detailViewModel: DetailViewModel = viewModel<DetailViewModel>()
+    val detailViewModel: DetailViewModel = viewModel()
     val detailState: DetailState by detailViewModel.detailState.collectAsState()
 
+    val lazyListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         detailViewModel.fetchDetailApiCall(landingData.id)
     }
 
-    Scaffold { innerPadding ->
-        DetailSection(innerPadding, landingData)
-        when (detailState.screenState) {
-            ScreenState.LOADING -> {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    CircularProgressIndicator()
+    // Pagination: load next page when scrolling to the bottom
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo }
+            .collect { visibleItems ->
+                if (visibleItems.isNotEmpty() && visibleItems.last().index >= detailState.list.size - 1) {
+                    if (detailState.screenState != ScreenState.LOADING) {
+                        detailViewModel.loadNextPage()
+                    }
                 }
             }
+    }
 
-            ScreenState.SUCCESS -> {
-                Log.d(detailState.list.toString(), "List Data")
-                print("Loading the SUCCESS state ${detailState.list}")
-                Text("Request SUCCESS")
+    Scaffold {
+        Column(modifier = Modifier.padding(it)) {
+            DetailSection(it, landingData)
+            when (detailState.screenState) {
+                ScreenState.LOADING -> {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                ScreenState.SUCCESS -> {
+                    LazyColumn(state = lazyListState) {
+                        items(detailState.list) { comment ->
+                            CommentItem(
+                                comment = comment,
+                                onLoadReplies = { commentId ->
+                                    // Trigger on-demand loading of immediate replies
+                                    detailViewModel.loadRepliesForComment(commentId)
+                                }
+                            )
+                        }
+                    }
+                }
+                ScreenState.ERROR -> {
+                    Text("Request failed", modifier = Modifier.fillMaxSize(), textAlign = TextAlign.Center)
+                }
             }
-
-            ScreenState.ERROR -> {
-                print("Loading the screen state")
-                Text("Request failed")
-            }
-
         }
     }
 }
+
+@Composable
+fun CommentItem(comment: DetailData, onLoadReplies: (Int) -> Unit) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Comment metadata (author and time)
+            Text(
+                text = "${comment.by} - ${DateTimeUtil.getRelativeTime(comment.time ?: 0)}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            // Comment text
+            Text(
+                text = comment.text ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
+            // Load replies when expanded
+            if ((comment.kids?.isNotEmpty() == true) || comment.replies.isNotEmpty()) {
+                Button(
+                    onClick = {
+                        isExpanded = !isExpanded
+                        if (isExpanded) {
+                            onLoadReplies(comment.id) // Load replies for this comment
+                        }
+                    },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text(if (isExpanded) "Hide Replies" else "Show Replies")
+                }
+
+                if (isExpanded) {
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        comment.replies.forEach { reply ->
+                            CommentItem(reply, onLoadReplies) // Recursively render replies
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 
 @Composable
 fun DetailSection(
@@ -183,97 +259,5 @@ private fun DetailHeaderSection(
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
-    }
-}
-
-
-@Preview(
-    name = "DARK",
-    showBackground = true,
-    showSystemUi = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Preview(
-    name = "LIGHT",
-    showBackground = true,
-    showSystemUi = true,
-    uiMode = Configuration.UI_MODE_NIGHT_NO
-)
-@Composable
-private fun CardPreview() {
-
-    RVHVTheme {
-        Surface {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-            ) {
-                DetailSection(
-                    landingData = LandingData(
-                        id = 12345,
-                        by = "Ravikant Paudel",
-                        time = 1740001267,
-                        type = "story",
-                        url = "https://github.com/ValveSoftware/source-sdk-2013/commit/0759e2e8e179d5352d81d0d4aaded72c1704b7a9",
-                        title = "1972 Unix V2 \"Beta\" Resurrected",
-                        score = 1453,
-                        descendants = 222,
-                        iconUrl = "https://www.tuhs.org/favicon.ico"
-                    ),
-                    innerPadding = PaddingValues(all = 16.dp),
-                )
-
-            }
-        }
-    }
-}
-
-
-//@Preview(
-//    name = "DARK",
-//    showBackground = true,
-//    showSystemUi = true,
-//    uiMode = Configuration.UI_MODE_NIGHT_YES
-//)
-//@Preview(
-//    name = "LIGHT",
-//    showBackground = true,
-//    showSystemUi = true,
-//    uiMode = Configuration.UI_MODE_NIGHT_NO
-//)
-@Composable
-fun TypographyPreview() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text("Display Large", style = MaterialTheme.typography.displayLarge)
-        Text("Display Medium", style = MaterialTheme.typography.displayMedium)
-        Text("Display Small", style = MaterialTheme.typography.displaySmall)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Headline Large", style = MaterialTheme.typography.headlineLarge)
-        Text("Headline Medium", style = MaterialTheme.typography.headlineMedium)
-        Text("Headline Small", style = MaterialTheme.typography.headlineSmall)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Title Large", style = MaterialTheme.typography.titleLarge)
-        Text("Title Medium", style = MaterialTheme.typography.titleMedium)
-        Text("Title Small", style = MaterialTheme.typography.titleSmall)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Body Large", style = MaterialTheme.typography.bodyLarge)
-        Text("Body Medium", style = MaterialTheme.typography.bodyMedium)
-        Text("Body Small", style = MaterialTheme.typography.bodySmall)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Label Large", style = MaterialTheme.typography.labelLarge)
-        Text("Label Medium", style = MaterialTheme.typography.labelMedium)
-        Text("Label Small", style = MaterialTheme.typography.labelSmall)
     }
 }

@@ -69,7 +69,7 @@ fun LandingPage(navController: NavController) {
             val totalItems = layoutInfo.totalItemsCount
 
             // Ensure that list is not empty and there are enough items
-            totalItems > 0 && lastVisibleItem >= totalItems - 5  // Here i load more when 5 items are left
+            totalItems > 0 && lastVisibleItem >= totalItems - 10  // Here i load more when 5 items are left
         }
     }
 

@@ -2,82 +2,80 @@ package np.com.ravikant.rv_hv.feature.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.feature.detail.data.DetailRepository
-
+import kotlin.math.min
 class DetailViewModel : ViewModel() {
 
     private val _detailState = MutableStateFlow(DetailState())
     val detailState: StateFlow<DetailState> = _detailState.asStateFlow()
-    private val _repository: DetailRepository = DetailRepository()
+    private val repository = DetailRepository()
 
-    fun fetchDetailApiCall(idx: Int) {
+    // Pagination state
+    private var currentPage = 0
+    private val pageSize = 2 // Number of top-level comments to load per page
+    private var allKids: List<Int> = emptyList()
+
+    fun fetchDetailApiCall(storyId: Int) {
         viewModelScope.launch {
-            val detailNews = try {
-                _repository.fetchDetailFromId(idx)
+            _detailState.value = _detailState.value.copy(screenState = ScreenState.LOADING)
+            try {
+                // Fetch the story to get the initial list of top-level comment IDs
+                val story = repository.fetchDetailFromId(storyId)
+                allKids = story.kids ?: emptyList()
+                currentPage = 0
+                // Load the first page of comments
+                loadNextPage()
             } catch (e: Exception) {
-                println("Error fetching ID list: ${e.message}")
-                _detailState.value = _detailState.value.copy(
-                    screenState = ScreenState.ERROR,
-                )
-                return@launch
+                _detailState.value = _detailState.value.copy(screenState = ScreenState.ERROR)
             }
-
-            val kids = detailNews.kids ?: emptyList() // Ensure it's not null
-            val commentApiList = fetchCommentsRecursively(kids)
-
-            _detailState.value = _detailState.value.copy(
-                list = commentApiList,
-                screenState = ScreenState.SUCCESS
-            )
         }
     }
-    private suspend fun fetchCommentsRecursively(commentIds: List<Int>): List<DetailData> =
-        coroutineScope {
-            commentIds.map { id ->
-                async(Dispatchers.IO) {
-                    try {
-                        val comment = _repository.fetchDetailFromId(id)
-                        println("Fetched comment ID $id: $comment")
 
-                        if (comment == null) {
-                            println("Error: Comment ID $id returned null")
-                            return@async null
-                        }
+    fun loadNextPage() {
+        viewModelScope.launch {
+            val startIndex = currentPage * pageSize
+            val endIndex = min((currentPage + 1) * pageSize, allKids.size)
+            if (startIndex >= allKids.size) return@launch // No more comments to load
 
-                        // Fetch replies recursively
-                        val replies = if (comment.kids.isNullOrEmpty()) {
-                            println("Comment ID $id has no kids")
-                            emptyList()
-                        } else {
-                            println("Fetching replies for comment ID $id: ${comment.kids}")
-                            fetchCommentsRecursively(comment.kids)
-                        }
+            // For each top-level comment, fetch only the comment details (no nested replies)
+            val pageIds = allKids.subList(startIndex, endIndex)
+            val comments = pageIds.mapNotNull { id -> fetchComment(id) }
 
-                        println("Comment ID $id - Text: ${comment.text}")
-
-                        DetailData(
-                            id = id,
-                            by = comment.by ?: "Unknown",
-                            time = comment.time ?: 0,
-                            type = comment.type ?: "comment",
-                            text = comment.text ?: "(No Text)",
-                            replies = replies
-                        )
-                    } catch (e: Exception) {
-                        println("Error fetching comment ID $id: ${e.message}")
-                        null
-                    }
-                }
-            }.awaitAll().filterNotNull()
+            // Append the new comments to the current list
+            _detailState.value = _detailState.value.copy(
+                list = _detailState.value.list + comments,
+                screenState = ScreenState.SUCCESS
+            )
+            currentPage++
         }
+    }
 
+    // Fetch only a single comment without recursively loading replies.
+    // This minimizes memory usage by deferring nested data until needed.
+    private suspend fun fetchComment(commentId: Int): DetailData? {
+        return repository.fetchDetailFromId(commentId)?.copy(replies = emptyList())
+    }
+
+    // Load immediate replies on demand (only one level deep)
+    fun loadRepliesForComment(commentId: Int) {
+        viewModelScope.launch {
+            val comment = _detailState.value.list.find { it.id == commentId } ?: return@launch
+            val replies = comment.kids?.mapNotNull { kidId ->
+                // Again, only load the immediate reply details
+                fetchComment(kidId)
+            } ?: emptyList()
+
+            // Update the comment within the state
+            val updatedList = _detailState.value.list.map {
+                if (it.id == commentId) it.copy(replies = replies) else it
+            }
+            _detailState.value = _detailState.value.copy(list = updatedList)
+        }
+    }
 }
+
