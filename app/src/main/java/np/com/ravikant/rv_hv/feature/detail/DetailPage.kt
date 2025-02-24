@@ -1,8 +1,11 @@
 package np.com.ravikant.rv_hv.feature.detail
 
+import android.content.res.Configuration
 import android.net.Uri
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,27 +23,32 @@ import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -48,6 +56,7 @@ import androidx.navigation.NavController
 import kotlinx.serialization.json.Json
 import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.feature.landing.LandingData
+import np.com.ravikant.rv_hv.ui.theme.RVHVTheme
 import np.com.ravikant.rv_hv.util.DateTimeUtil
 import java.net.URL
 
@@ -65,17 +74,6 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
         detailViewModel.fetchDetailApiCall(landingData.id)
     }
 
-    // Pagination: load next page when scrolling to the bottom
-    LaunchedEffect(lazyListState) {
-        snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo }
-            .collect { visibleItems ->
-                if (visibleItems.isNotEmpty() && visibleItems.last().index >= detailState.list.size - 1) {
-                    if (detailState.screenState != ScreenState.LOADING) {
-//                        detailViewModel.loadNextPage()
-                    }
-                }
-            }
-    }
 
     Scaffold {
         Column(modifier = Modifier.padding(it)) {
@@ -94,14 +92,7 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                     val expandedComments = remember { mutableStateOf(emptyMap<Int, Boolean>()) }
                     LazyColumn(state = lazyListState) {
                         items(detailState.list) { comment ->
-                            CommentItem(
-                                comment = comment,
-                                onLoadReplies = { commentId ->
-                                    // Trigger on-demand loading of immediate replies
-//                                    detailViewModel.loadRepliesForComment(commentId)
-                                },
-                                expandedComments = expandedComments
-                            )
+                            CommentItem(comment = comment)
                         }
                     }
                 }
@@ -121,74 +112,41 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
 
 @Composable
 fun CommentItem(
-    comment: DetailData,
-    expandedComments: MutableState<Map<Int, Boolean>>,
-    onLoadReplies: (Int) -> Unit
+    comment: DetailData
 ) {
-    val isExpanded = expandedComments.value[comment.id] ?: false
+    val padding = maxOf(comment.index * 12, 8)
+    val dividerColor = when(comment.index){
+        0 -> Color.Red
+        1 -> Color.Blue
+        2 -> Color.Green
+        3 -> Color(0xFF6200EE)
+        else -> Color.Yellow
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Comment metadata (author and time)
-            Text(
-                text = "${comment.by} - ${DateTimeUtil.getRelativeTime(comment.time ?: 0)}",
-                style = MaterialTheme.typography.bodySmall,
-            )
-
-            // Comment text
-            Text(
-                text = comment.text ?: "",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            // Show button if there are potential replies (kids exist) or replies are already loaded
-            if ((comment.kids?.isNotEmpty() == true) || comment.replies.isNotEmpty()) {
-                Button(
-                    onClick = {
-                        expandedComments.value = expandedComments.value.toMutableMap().apply {
-                            this[comment.id] = !(this[comment.id] ?: false)
-                        }
-                        if (!isExpanded && comment.replies.isEmpty()) {
-                            onLoadReplies(comment.id) // Load replies only when expanding for the first time
-                        }
-                    },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(if (isExpanded) "Hide Replies" else "Show Replies")
-                }
-
-                if (isExpanded) {
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        comment.replies.forEach { reply ->
-                            CommentItem(
-                                reply,
-                                expandedComments,
-                                onLoadReplies
-                            ) // Recursively render replies
-                        }
-                    }
-                }
+            .padding(start = padding.dp, top = 2.dp, end = 8.dp, bottom = 2.dp),
+        ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+        ) {
+            VerticalDivider(thickness = 4.dp, color = dividerColor)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "${comment.by} - ${DateTimeUtil.getRelativeTime(comment.time ?: 0)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = getAnnotatedString(comment.text ?: ""),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
     }
 }
-
-@Composable
-fun CommentList(comments: List<DetailData>, onLoadReplies: (Int) -> Unit) {
-    val expandedComments = remember { mutableStateOf(mapOf<Int, Boolean>()) }
-
-    LazyColumn {
-        items(comments) { comment ->
-            CommentItem(comment, expandedComments, onLoadReplies)
-        }
-    }
-}
-
 
 @Composable
 fun DetailSection(
@@ -289,3 +247,61 @@ private fun DetailHeaderSection(
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
+
+
+private fun getAnnotatedString(htmlString: String): AnnotatedString {
+    return AnnotatedString.fromHtml(
+        htmlString = htmlString,
+        linkStyles = TextLinkStyles(
+            style = SpanStyle(
+                color = Color.Blue,
+                textDecoration = TextDecoration.Underline
+            )
+        )
+    )
+
+}
+
+
+@Preview(
+    name = "DARK",
+    showBackground = true,
+    showSystemUi = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Preview(
+    name = "LIGHT",
+    showBackground = true,
+    showSystemUi = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
+@Composable
+private fun CommentPreview() {
+    RVHVTheme {
+        Surface {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                CommentItem(
+                    comment =
+                    DetailData(
+                        id = 12345,
+                        by = "Ravi",
+                        time = 1740001267,
+                        text = "This is text",
+                        kids = emptyList(),
+                        index = 1,
+                        replies = emptyList(),
+                        timeString = "1 days ago"
+                    )
+                )
+
+            }
+
+
+        }
+    }
+}
+
+
