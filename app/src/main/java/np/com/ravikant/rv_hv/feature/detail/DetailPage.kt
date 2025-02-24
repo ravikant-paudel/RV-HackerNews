@@ -36,12 +36,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -90,6 +94,7 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                         CircularProgressIndicator()
                     }
                 }
+
                 ScreenState.SUCCESS -> {
                     val expandedComments = remember { mutableStateOf(emptyMap<Int, Boolean>()) }
                     LazyColumn(state = lazyListState) {
@@ -105,8 +110,13 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                         }
                     }
                 }
+
                 ScreenState.ERROR -> {
-                    Text("Request failed", modifier = Modifier.fillMaxSize(), textAlign = TextAlign.Center)
+                    Text(
+                        "Request failed",
+                        modifier = Modifier.fillMaxSize(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
@@ -115,7 +125,11 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
 
 
 @Composable
-fun CommentItem(comment: DetailData, expandedComments: MutableState<Map<Int, Boolean>>, onLoadReplies: (Int) -> Unit) {
+fun CommentItem(
+    comment: DetailData,
+    expandedComments: MutableState<Map<Int, Boolean>>,
+    onLoadReplies: (Int) -> Unit
+) {
     val isExpanded = expandedComments.value[comment.id] ?: false
 
     Card(
@@ -133,7 +147,7 @@ fun CommentItem(comment: DetailData, expandedComments: MutableState<Map<Int, Boo
 
             // Comment text
             Text(
-                text = comment.text ?: "",
+                text = displayHtmlText(comment.text ?: ""),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
@@ -156,7 +170,11 @@ fun CommentItem(comment: DetailData, expandedComments: MutableState<Map<Int, Boo
                 if (isExpanded) {
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         comment.replies.forEach { reply ->
-                            CommentItem(reply, expandedComments, onLoadReplies) // Recursively render replies
+                            CommentItem(
+                                reply,
+                                expandedComments,
+                                onLoadReplies
+                            )
                         }
                     }
                 }
@@ -164,18 +182,6 @@ fun CommentItem(comment: DetailData, expandedComments: MutableState<Map<Int, Boo
         }
     }
 }
-
-@Composable
-fun CommentList(comments: List<DetailData>, onLoadReplies: (Int) -> Unit) {
-    val expandedComments = remember { mutableStateOf(mapOf<Int, Boolean>()) }
-
-    LazyColumn {
-        items(comments) { comment ->
-            CommentItem(comment, expandedComments, onLoadReplies)
-        }
-    }
-}
-
 
 
 @Composable
@@ -276,4 +282,18 @@ private fun DetailHeaderSection(
         }
         Spacer(modifier = Modifier.height(24.dp))
     }
+}
+
+
+@Composable
+fun displayHtmlText(html: String): AnnotatedString {
+    return AnnotatedString.fromHtml(
+        html,
+        linkStyles = TextLinkStyles(
+            style = SpanStyle(
+//                color = Color.Blue,
+                textDecoration = TextDecoration.Underline
+            )
+        )
+    )
 }

@@ -19,7 +19,7 @@ class DetailViewModel : ViewModel() {
 
     // Pagination state
     private var currentPage = 0
-    private val pageSize = 2 // Number of top-level comments to load per page
+    private val pageSize = 5
     private var allKids: List<Int> = emptyList()
 
     fun fetchDetailApiCall(storyId: Int) {
@@ -60,7 +60,7 @@ class DetailViewModel : ViewModel() {
     // Fetch only a single comment without recursively loading replies.
     // This minimizes memory usage by deferring nested data until needed.
     private suspend fun fetchComment(commentId: Int): DetailData? {
-        return repository.fetchDetailFromId(commentId)?.copy(replies = emptyList())
+        return repository.fetchDetailFromId(commentId).copy(replies = emptyList())
     }
 
     fun loadRepliesForComment(commentId: Int) {
