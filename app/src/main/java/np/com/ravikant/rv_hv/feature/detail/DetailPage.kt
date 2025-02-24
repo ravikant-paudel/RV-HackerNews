@@ -36,7 +36,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +71,7 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
             .collect { visibleItems ->
                 if (visibleItems.isNotEmpty() && visibleItems.last().index >= detailState.list.size - 1) {
                     if (detailState.screenState != ScreenState.LOADING) {
-                        detailViewModel.loadNextPage()
+//                        detailViewModel.loadNextPage()
                     }
                 }
             }
@@ -90,6 +89,7 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                         CircularProgressIndicator()
                     }
                 }
+
                 ScreenState.SUCCESS -> {
                     val expandedComments = remember { mutableStateOf(emptyMap<Int, Boolean>()) }
                     LazyColumn(state = lazyListState) {
@@ -98,15 +98,20 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                                 comment = comment,
                                 onLoadReplies = { commentId ->
                                     // Trigger on-demand loading of immediate replies
-                                    detailViewModel.loadRepliesForComment(commentId)
+//                                    detailViewModel.loadRepliesForComment(commentId)
                                 },
                                 expandedComments = expandedComments
                             )
                         }
                     }
                 }
+
                 ScreenState.ERROR -> {
-                    Text("Request failed", modifier = Modifier.fillMaxSize(), textAlign = TextAlign.Center)
+                    Text(
+                        "Request failed",
+                        modifier = Modifier.fillMaxSize(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
@@ -115,7 +120,11 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
 
 
 @Composable
-fun CommentItem(comment: DetailData, expandedComments: MutableState<Map<Int, Boolean>>, onLoadReplies: (Int) -> Unit) {
+fun CommentItem(
+    comment: DetailData,
+    expandedComments: MutableState<Map<Int, Boolean>>,
+    onLoadReplies: (Int) -> Unit
+) {
     val isExpanded = expandedComments.value[comment.id] ?: false
 
     Card(
@@ -156,7 +165,11 @@ fun CommentItem(comment: DetailData, expandedComments: MutableState<Map<Int, Boo
                 if (isExpanded) {
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         comment.replies.forEach { reply ->
-                            CommentItem(reply, expandedComments, onLoadReplies) // Recursively render replies
+                            CommentItem(
+                                reply,
+                                expandedComments,
+                                onLoadReplies
+                            ) // Recursively render replies
                         }
                     }
                 }
@@ -175,7 +188,6 @@ fun CommentList(comments: List<DetailData>, onLoadReplies: (Int) -> Unit) {
         }
     }
 }
-
 
 
 @Composable

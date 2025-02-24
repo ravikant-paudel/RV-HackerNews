@@ -1,95 +1,84 @@
 package np.com.ravikant.rv_hv.feature.detail
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import np.com.ravikant.rv_hv.ScreenState
 import np.com.ravikant.rv_hv.feature.detail.data.DetailRepository
-import kotlin.math.min
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 
 
 class DetailViewModel : ViewModel() {
 
     private val _detailState = MutableStateFlow(DetailState())
     val detailState: StateFlow<DetailState> = _detailState.asStateFlow()
-    private val repository = DetailRepository()
-
-    // Pagination state
-    private var currentPage = 0
-    private val pageSize = 2 // Number of top-level comments to load per page
-    private var allKids: List<Int> = emptyList()
 
     fun fetchDetailApiCall(storyId: Int) {
-        viewModelScope.launch {
-            _detailState.value = _detailState.value.copy(screenState = ScreenState.LOADING)
+        CoroutineScope(Dispatchers.Main).launch {
             try {
-                // Fetch the story to get the initial list of top-level comment IDs
-                val story = repository.fetchDetailFromId(storyId)
-                allKids = story.kids ?: emptyList()
-                currentPage = 0
-                // Load the first page of comments
-                loadNextPage()
+                val comments = withContext(Dispatchers.IO) {
+                    val detailResponse = Jsoup.connect("https://news.ycombinator.com/item?id=$storyId").get()
+                    val commentElements = detailResponse.select(".athing.comtr") // Selects all comment threads
+
+                    // Extract comments inside IO thread to avoid main thread overload
+                    commentElements.map { extractComments(it) }
+                }
+
+                // Convert to JSON (runs on Main thread, but it's lightweight)
+                val jsonOutput = Json.encodeToString(comments)
+
+                _detailState.value = _detailState.value.copy(
+                    ScreenState.SUCCESS,
+                    list = comments,
+                )
+
+                // Print JSON
+                println(jsonOutput)
+
             } catch (e: Exception) {
-                _detailState.value = _detailState.value.copy(screenState = ScreenState.ERROR)
+                e.printStackTrace()
+                _detailState.value = _detailState.value.copy(
+                    ScreenState.ERROR,
+                )
             }
         }
     }
 
-    fun loadNextPage() {
-        viewModelScope.launch {
-            val startIndex = currentPage * pageSize
-            val endIndex = min((currentPage + 1) * pageSize, allKids.size)
-            if (startIndex >= allKids.size) return@launch // No more comments to load
+    private fun extractComments(commentElement: Element, level: Int = 1): DetailData {
+        val id = commentElement.attr("id").toIntOrNull() ?: commentElement.hashCode()
+        val author = commentElement.select(".hnuser").text()
+        val text = commentElement.select(".comment").text()
 
-            // For each top-level comment, fetch only the comment details (no nested replies)
-            val pageIds = allKids.subList(startIndex, endIndex)
-            val comments = pageIds.mapNotNull { id -> fetchComment(id) }
+        // Extract indent value
+        val index = commentElement.select("td.ind").attr("indent").toIntOrNull() ?: 0
 
-            // Append the new comments to the current list
-            _detailState.value = _detailState.value.copy(
-                list = _detailState.value.list + comments,
-                screenState = ScreenState.SUCCESS
-            )
-            currentPage++
-        }
+        // Extract time
+        val time = commentElement.select(".age").firstOrNull()?.text() ?: ""
+
+        val kids = mutableListOf<Int>()
+
+        // Extract replies (recursive)
+        val replyElements = commentElement.select(".reply .athing.comtr")
+        val replies = replyElements.map { extractComments(it, level + 1) }
+
+        return DetailData(
+            id = id,
+            by = author,
+            text = text,
+            timeString = time,
+            index = index,
+            kids = kids,
+            replies = replies
+        )
     }
 
-    // Fetch only a single comment without recursively loading replies.
-    // This minimizes memory usage by deferring nested data until needed.
-    private suspend fun fetchComment(commentId: Int): DetailData? {
-        return repository.fetchDetailFromId(commentId)?.copy(replies = emptyList())
-    }
-
-    fun loadRepliesForComment(commentId: Int) {
-        viewModelScope.launch {
-            // Recursively search for the comment in all levels of replies
-            fun findComment(comments: List<DetailData>): DetailData? {
-                for (comment in comments) {
-                    if (comment.id == commentId) return comment
-                    val foundInReplies = findComment(comment.replies)
-                    if (foundInReplies != null) return foundInReplies
-                }
-                return null
-            }
-
-            val comment = findComment(_detailState.value.list) ?: return@launch
-            val replies = comment.kids?.mapNotNull { kidId -> fetchComment(kidId) } ?: emptyList()
-
-            // Update the comment's replies in the state
-            fun updateList(comments: List<DetailData>): List<DetailData> {
-                return comments.map {
-                    if (it.id == commentId) it.copy(replies = replies)
-                    else it.copy(replies = updateList(it.replies))
-                }
-            }
-
-            _detailState.value = _detailState.value.copy(
-                list = updateList(_detailState.value.list)
-            )
-        }
-    }
 }
 
