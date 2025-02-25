@@ -149,7 +149,7 @@ fun CommentItem(
 
                 }
                 Text(
-                    text = getAnnotatedString(comment.text ?: ""),
+                    text = displayHtmlText(comment.text ?: ""),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -257,10 +257,10 @@ private fun DetailHeaderSection(
     }
 }
 
-
-private fun getAnnotatedString(htmlString: String): AnnotatedString {
+@Composable
+fun displayHtmlText(html: String): AnnotatedString {
     return AnnotatedString.fromHtml(
-        htmlString = htmlString,
+        html,
         linkStyles = TextLinkStyles(
             style = SpanStyle(
                 color = Color.Blue,
@@ -268,7 +268,6 @@ private fun getAnnotatedString(htmlString: String): AnnotatedString {
             )
         )
     )
-
 }
 
 
