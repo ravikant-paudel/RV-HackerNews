@@ -116,7 +116,9 @@ fun CommentItem(
         3 -> Color(0xFFA52A2A)
         4 -> Color.Magenta
         5 -> Color(0xFFFFA500)
-        else -> Color.Yellow
+        6 -> Color.Yellow
+        7 -> Color.Gray
+        else -> Color.Green
     }
 
     Card(
