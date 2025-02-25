@@ -112,8 +112,10 @@ fun CommentItem(
     val dividerColor = when (comment.index) {
         0 -> Color.Red
         1 -> Color.Blue
-        2 -> Color.Green
-        3 -> Color.Cyan
+        2 -> Color(0xFF006400)
+        3 -> Color(0xFFA52A2A)
+        4 -> Color.Magenta
+        5 -> Color(0xFFFFA500)
         else -> Color.Yellow
     }
 
@@ -129,11 +131,21 @@ fun CommentItem(
         ) {
             VerticalDivider(thickness = 4.dp, color = dividerColor)
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "${comment.by} - ${comment.timeString}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row {
+                    Text(
+                        text = comment.by ?: "",
+                        style = MaterialTheme.typography.bodyMedium.copy(color = dividerColor),
+                        fontWeight = FontWeight.Bold
+
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = " - ${comment.timeString}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                }
                 Text(
                     text = getAnnotatedString(comment.text ?: ""),
                     style = MaterialTheme.typography.bodyMedium,
