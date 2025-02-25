@@ -146,7 +146,6 @@ fun CommentItem(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
-
                 }
                 Text(
                     text = displayHtmlText(comment.text ?: ""),

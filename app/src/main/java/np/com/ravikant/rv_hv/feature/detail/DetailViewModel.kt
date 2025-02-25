@@ -55,7 +55,7 @@ class DetailViewModel : ViewModel() {
     private fun extractComments(commentElement: Element, level: Int = 1): DetailData {
         val id = commentElement.attr("id").toIntOrNull() ?: commentElement.hashCode()
         val author = commentElement.select(".hnuser").text()
-        val text = commentElement.select(".commtext").text()
+        val text = commentElement.select(".commtext")
 
         // Extract indent value
         val index = commentElement.select("td.ind").attr("indent").toIntOrNull() ?: 0
@@ -72,7 +72,7 @@ class DetailViewModel : ViewModel() {
         return DetailData(
             id = id,
             by = author,
-            text = text,
+            text = text.toString(),
             timeString = time,
             index = index,
             kids = kids,
