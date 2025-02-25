@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -86,57 +91,135 @@ fun LandingPage(navController: NavController) {
 
     RVHVTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            when (landingState.screenState) {
-                ScreenState.LOADING -> {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-
-                ScreenState.SUCCESS -> {
-                    LazyColumn(
-                        state = lazyListState,
-                        modifier = Modifier.padding(innerPadding),
-                        verticalArrangement = Arrangement.spacedBy(1.dp),
-                    ) {
-                        itemsIndexed(landingState.list) { index, item ->
-                            CharacterCard(item, index + 1) {
-                                val jsonData = Uri.encode(Json.encodeToString(item)) // Encode JSON
-                                navController.navigate("detail/$jsonData") // Pass encoded data
-                            }
+            Column(modifier = Modifier.padding(innerPadding)) {
+                DropDownDemo()
+                when (landingState.screenState) {
+                    ScreenState.LOADING -> {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            CircularProgressIndicator()
                         }
+                    }
 
-                        // Show a loading indicator at the bottom while fetching more data
-                        if (landingState.isLoadingMore) {
-                            Log.d("LazyList", "Showing bottom loader: ${landingState.isLoadingMore}")
-                            item {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    ScreenState.SUCCESS -> {
+                        LazyColumn(
+                            state = lazyListState,
+                            verticalArrangement = Arrangement.spacedBy(1.dp),
+                        ) {
+                            itemsIndexed(landingState.list) { index, item ->
+                                CharacterCard(item, index + 1) {
+                                    val jsonData =
+                                        Uri.encode(Json.encodeToString(item)) // Encode JSON
+                                    navController.navigate("detail/$jsonData") // Pass encoded data
                                 }
                             }
+
+                            // Show a loading indicator at the bottom while fetching more data
+                            if (landingState.isLoadingMore) {
+                                Log.d(
+                                    "LazyList",
+                                    "Showing bottom loader: ${landingState.isLoadingMore}"
+                                )
+                                item {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                    }
+                                }
+                            }
+
                         }
-
                     }
-                }
 
-                ScreenState.ERROR -> {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Text("Request failed")
+                    ScreenState.ERROR -> {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text("Request failed")
+                        }
                     }
                 }
             }
         }
     }
 }
+
+@Composable
+fun DropDownDemo() {
+    val isDropDownExpanded = remember {
+        mutableStateOf(false)
+    }
+
+    val itemPosition = remember {
+        mutableStateOf(0)
+    }
+
+    val topics = listOf(
+        "Top Stories",
+        "Last 24 hours",
+        "Last 48 hours",
+        "Last Week",
+        "New Stories",
+        "Best Stories",
+        "Ask HN",
+        "Show HN",
+        "HN Jobs"
+    )
+
+    Column(
+        modifier = Modifier
+            .wrapContentSize()
+            .padding(horizontal = 16.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable {
+                    isDropDownExpanded.value = true
+                }
+            ) {
+                Text(
+                    text = topics[itemPosition.value],
+                    style = MaterialTheme.typography.displaySmall
+                )
+                Spacer(Modifier.width(32.dp))
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Arrow",
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            DropdownMenu(
+                expanded = isDropDownExpanded.value,
+                onDismissRequest = {
+                    isDropDownExpanded.value = false
+                }) {
+                topics.forEachIndexed { index, username ->
+                    DropdownMenuItem(text = {
+                        Text(
+                            text = username,
+                            style = MaterialTheme.typography.displaySmall
+                        )
+                    },
+                        onClick = {
+                            isDropDownExpanded.value = false
+                            itemPosition.value = index
+                        })
+                }
+            }
+        }
+
+    }
+}
+
 
 @Composable
 fun CharacterCard(item: LandingData, rank: Int, onClick: () -> Unit) {

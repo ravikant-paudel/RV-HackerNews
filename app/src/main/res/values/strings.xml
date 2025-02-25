@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">RV-HV</string>
+    <string name="top_stories">Top Stories</string>
+    <string name="last_24_hours">Last 24 hours</string>
+    <string name="last_48_hours">Last 48 hours</string>
+    <string name="last_week">Last Week</string>
+    <string name="new_Stories">New Stories</string>
+    <string name="best_stories">Best Stories</string>
+    <string name="ask_hn">Ask HN</string>
+    <string name="show_hn">Show HN</string>
+    <string name="hn_jobs">HN Jobs</string>
 </resources>
