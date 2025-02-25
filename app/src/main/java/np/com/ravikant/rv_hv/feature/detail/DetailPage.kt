@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AccountCircle
@@ -36,8 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,8 +65,6 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
     val detailViewModel: DetailViewModel = viewModel()
     val detailState: DetailState by detailViewModel.detailState.collectAsState()
 
-    val lazyListState = rememberLazyListState()
-
     LaunchedEffect(Unit) {
         detailViewModel.fetchDetailApiCall(landingData.id)
     }
@@ -89,8 +84,7 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
                 }
 
                 ScreenState.SUCCESS -> {
-                    val expandedComments = remember { mutableStateOf(emptyMap<Int, Boolean>()) }
-                    LazyColumn(state = lazyListState) {
+                    LazyColumn {
                         items(detailState.list) { comment ->
                             CommentItem(comment = comment)
                         }
@@ -114,12 +108,12 @@ fun DetailPage(navController: NavController, backStackEntry: NavBackStackEntry) 
 fun CommentItem(
     comment: DetailData
 ) {
-    val padding = maxOf(comment.index * 12, 8)
-    val dividerColor = when(comment.index){
+    val padding = maxOf(comment.index * 22, 8)
+    val dividerColor = when (comment.index) {
         0 -> Color.Red
         1 -> Color.Blue
         2 -> Color.Green
-        3 -> Color(0xFF6200EE)
+        3 -> Color.Cyan
         else -> Color.Yellow
     }
 
@@ -127,7 +121,7 @@ fun CommentItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = padding.dp, top = 2.dp, end = 8.dp, bottom = 2.dp),
-        ) {
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -136,8 +130,9 @@ fun CommentItem(
             VerticalDivider(thickness = 4.dp, color = dividerColor)
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "${comment.by} - ${DateTimeUtil.getRelativeTime(comment.time ?: 0)}",
+                    text = "${comment.by} - ${comment.timeString}",
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = getAnnotatedString(comment.text ?: ""),
@@ -291,7 +286,7 @@ private fun CommentPreview() {
                         time = 1740001267,
                         text = "This is text",
                         kids = emptyList(),
-                        index = 1,
+                        index = 0,
                         replies = emptyList(),
                         timeString = "1 days ago"
                     )
